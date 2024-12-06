@@ -16,6 +16,8 @@ Run src/DL_processing_train.py (you need datasets/s2/tra_xxx etc now)
 ## §4. Validate data
 Run src/val_check.py or val_check.ipynb (you need src/model/trained_model/***pth)
 
+# Development note
+
 ## Contributors
 * Jin Ikeda (LSU|Center for Computation and Technology)
 

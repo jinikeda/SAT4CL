@@ -16,7 +16,14 @@ Run src/DL_processing_train.py (you need datasets/s2/tra_xxx etc now)
 ## §4. Validate data
 Run src/val_check.py or val_check.ipynb (you need src/model/trained_model/***pth)
 
+![Urban area](https://github.com/jinikeda/sat4cl/blob/main/Image/predicted_output_site19.png "")
+![Wetland area1](https://github.com/jinikeda/sat4cl/blob/main/Image/predicted_output_site6.png "")
+![Wetland area2](https://github.com/jinikeda/sat4cl/blob/main/Image/predicted_output_site28.png "")
+
+
 # Development note
+
+
 
 ## Contributors
 * Jin Ikeda (LSU|Center for Computation and Technology)

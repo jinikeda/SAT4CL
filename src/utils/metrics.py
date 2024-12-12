@@ -94,3 +94,53 @@ def miou_multi(pred, truth, num_classes=3):
     # Compute mean IoU across all classes
     miou = torch.mean(torch.stack(iou_per_class))
     return miou
+
+def miou_multi_with_confusion_matrix(pred, truth, num_classes=3):
+    """
+    Calculate Mean Intersection over Union (mIoU) and confusion matrix for multi-class classification.
+    Args:
+        pred (4D tensor): Predicted probabilities [N, C, H, W].
+        truth (3D tensor): Ground truth labels [N, H, W].
+        num_classes (int): Total number of classes (default is 3).
+    Returns:
+        miou (float): Mean IoU for the batch.
+        confusion_matrix (2D tensor): Confusion matrix for the batch.
+    """
+    # Convert predicted probabilities to class predictions
+    pred_labels = torch.argmax(pred, dim=1)  # [N, H, W]
+
+    iou_per_class = []
+
+    # Compute IoU for each class
+    for class_idx in range(num_classes):
+        # Create binary masks for the current class
+        pred_class = (pred_labels == class_idx).float()  # Predicted pixels for this class
+        truth_class = (truth == class_idx).float()  # Ground truth pixels for this class
+
+        # Compute intersection and union
+        intersection = torch.sum(pred_class * truth_class)
+        union = torch.sum(pred_class) + torch.sum(truth_class) - intersection
+
+        # Handle case where there are no pixels for this class in truth or predictions
+        if union == 0:
+            iou = torch.tensor(1.0, device=pred.device)  # Perfect IoU if there are no pixels
+        else:
+            iou = intersection / (union + 1e-7)  # Avoid division by zero
+
+        iou_per_class.append(iou)
+
+    # Compute mean IoU across all classes
+    miou = torch.mean(torch.stack(iou_per_class))
+
+    # Efficient confusion matrix computation
+    truth_flat = truth.reshape(-1)  # Flatten ground truth
+    pred_flat = pred_labels.reshape(-1)  # Flatten predictions
+
+    # Use a scatter-add operation to populate the confusion matrix
+    confusion_matrix = torch.zeros((num_classes, num_classes), dtype=torch.int64, device=pred.device)
+    indices = num_classes * truth_flat + pred_flat  # Map 2D indices to 1D
+    unique_indices, counts = torch.unique(indices, return_counts=True)
+
+    confusion_matrix.put_(unique_indices, counts, accumulate=True)
+
+    return miou, confusion_matrix

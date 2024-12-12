@@ -9,6 +9,7 @@ import config
 from model import unet,ResUNet  # Import your model architecture
 from glob import glob
 from torch.utils.data import DataLoader, Dataset
+from utils.metrics import miou_multi_with_confusion_matrix
 import rasterio
 import os
 import matplotlib.pyplot as plt
@@ -111,6 +112,8 @@ def top_left_crop(tensor, target_height, target_width):
 Workspace=os.getcwd() # HPC
 Photospace=os.path.join(Workspace, 'Photo')
 
+
+total_confusion_matrix = torch.zeros(3, 3)  # Initialize the accumulated confusion matrix
 # Load and preprocess the input scene and ground truth
 for index, (scene, truth) in enumerate(zip(paths_val_scene, paths_val_truth)):
     print(f"Index: {index}")
@@ -200,6 +203,30 @@ for index, (scene, truth) in enumerate(zip(paths_val_scene, paths_val_truth)):
     # Save and show the plot
     plt.savefig(output_png_path, dpi=300, bbox_inches='tight')
     plt.show()
+
+    # Calculate the confusion matrix and accumulate
+    _, confusion_matrix = miou_multi_with_confusion_matrix(pred, truth_tensor, num_classes=3)
+    confusion_matrix = confusion_matrix.cpu().numpy()
+    total_confusion_matrix += confusion_matrix
+
+# Calculate the number of correct predictions (sum of diagonal elements)
+correct_predictions = torch.diag(total_confusion_matrix).sum().item()
+
+# Calculate the total number of predictions (sum of all elements)
+total_predictions = total_confusion_matrix.sum().item()
+
+# Calculate the percentage accuracy
+accuracy_percentage = (correct_predictions / total_predictions) * 100
+
+# Calculate the accuracy for each class
+class_accuracies = torch.diag(total_confusion_matrix) / total_confusion_matrix.sum(dim=1)
+
+print(f"Percentage Accuracy: {accuracy_percentage:.2f}%")
+print(f"Total Confusion Matrix:\n{total_confusion_matrix}")
+for class_idx, class_accuracy in enumerate(class_accuracies):
+    print(f"Accuracy for class {class_idx}: {class_accuracy.item() * 100:.2f}%")
+
+
 
 
 # In[8]:

@@ -11,7 +11,6 @@ import os
 import time
 import numpy as np
 import pandas as pd
-import rasterio
 import random
 from tqdm import tqdm  # For progress bar
 from glob import glob
@@ -19,17 +18,14 @@ import matplotlib.pyplot as plt
 
 # PyTorch
 import torch
-import torch.nn as nn
 import torchvision.transforms as transforms
 
 # internal modules
 import config
 from model import unet,ResUNet, ResUnetPlusPlus
-from utils.metrics import oa_binary, miou_binary,oa_multi, miou_multi
+from utils.metrics import *
 from dataloader.pyrsimg import *
-from dataloader.preprocess import read_normalize
 from dataloader.loader import patch_tensor_dset, scene_dset
-from dataloader.parallel_loader import threads_scene_dset
 
 Val_patch_flags = False # True: create patches for validation data
 model_name = 'resunet' # 'unet', 'resunet', etc
@@ -92,6 +88,7 @@ def train_step(model, loss_fn, optimizer, x, y,num_classes):
     optimizer.step()
     print (loss)
     miou = miou_multi(pred=pred, truth=y, num_classes=num_classes)
+    # miou, confusion_matrix = miou_multi_with_confusion_matrix(pred=pred, truth=y, num_classes=num_classes)
     oa = oa_multi(pred=pred, truth=y, num_classes=num_classes)
     return loss, miou, oa
 
@@ -112,6 +109,7 @@ def val_step(model, loss_fn, x, y, num_classes):
         # Compute loss
         loss = loss_fn(pred, y)
         miou = miou_multi(pred=pred, truth=y, num_classes=num_classes)
+        #miou, confusion_matrix = miou_multi_with_confusion_matrix(pred=pred, truth=y, num_classes=num_classes)
         oa = oa_multi(pred=pred, truth=y, num_classes=num_classes)
 
     return loss, miou, oa, pred
@@ -155,7 +153,7 @@ def train_loops(model, loss_fn, optimizer, tra_loader, val_loader, epoches,num_c
             x_batch, y_batch = x_batch.to(device, dtype=torch.float32), y_batch.to(device)
             # y_batch = config.label_smooth(y_batch)  # Apply label smoothing (not sure do we need it for multi-class)
             y_batch = y_batch.squeeze(1).long()
-            loss, miou, oa = train_step(model=model, loss_fn=loss_fn,                                             optimizer=optimizer, x=x_batch, y=y_batch,num_classes=num_classes)
+            loss, miou, oa = train_step(model=model, loss_fn=loss_fn,optimizer=optimizer, x=x_batch, y=y_batch,num_classes=num_classes)
             tra_loss += loss.item()
             tra_miou += miou
             tra_oa += oa.item()
@@ -172,6 +170,8 @@ def train_loops(model, loss_fn, optimizer, tra_loader, val_loader, epoches,num_c
             val_oa += oa.item()
 
         if epoch % 25 == 0:  # Visualize every 25 epochs
+
+            # Convert predictions to class labels
             pred_class = torch.argmax(pred, dim=1).cpu().numpy()  # Convert predictions to class labels
             y_val_np = y_batch.cpu().numpy()  # Ground truth to numpy
             print("Shape of y_val_sample:", y_val_np.shape)

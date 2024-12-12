@@ -27,6 +27,9 @@ Run src/val_check.py or val_check.ipynb (you need src/model/trained_model/***pth
 
 ## Contributors
 * Jin Ikeda (LSU|Center for Computation and Technology)
+* Andros, Charles (USACE ERDC)
+* Taylor Alvarado (USACE ERDC)
+* Rovai, Andre (USACE ERDC)
 
 ## Acknowledgments
 * [xinluo2018](https://github.com/xinluo2018/WatNetv2)

@@ -1,7 +1,7 @@
 # SAT4CL
-Classify &amp; Label land types using Satellite data with DL model
+Classify &amp; Label land types using Satellite data with DL model.
 
-This package has been developed further based on the WatNet2 Deep Learning model (Added multiple ML architecture). 
+This package has been developed further based on the WatNet2 Deep Learning model (Added multiple ML architectures). 
 
 ## §1. Install virtual conda env and activation
 Type: ***conda env create -f env.yml*** \

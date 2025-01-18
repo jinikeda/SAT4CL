@@ -4,7 +4,7 @@
 # Original author: xin luo, 2023.9.21
 # Developed by the Center for Computation & Technology at Louisiana State University (LSU).
 # Developer: Jin Ikeda
-# Last modified Dec 2, 2024
+# Last modified Jan 17, 2024
 
 # import modules
 import os
@@ -22,23 +22,32 @@ import torchvision.transforms as transforms
 
 # internal modules
 import config
-from model import unet,ResUNet, ResUnetPlusPlus
+from model import unet,ResUNet, ResUnetPlusPlus, cnn
 from utils.metrics import *
 from dataloader.pyrsimg import *
 from dataloader.loader import patch_tensor_dset, scene_dset
 
 Val_patch_flags = False # True: create patches for validation data
-model_name = 'resunet' # 'unet', 'resunet', etc
+model_name = 'cnn' # 'unet', 'resunet',dnn, etc
+input_bands = 6  # number of input bands
+output_classes = 3  # number of classes (output classes)
+dropout_prob = 0.1  # dropout probability
+pooling_Flag = False # True: use pooling (2dmax) layers
 
 # Check if CUDA is available
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f"Using device: {device}")
 if model_name == 'unet':
-    model = unet(num_bands=6, num_classes=3,dropout_prob=0.0).to(device) # Use U-net model
+    model = unet(num_bands=input_bands, num_classes = output_classes,dropout_prob=dropout_prob).to(device) # Use U-net model
 elif model_name == 'resunet':
-    model = ResUNet(num_bands=6, num_classes=3).to(device) # Use ResUNet model
+    model = ResUNet(num_bands = input_bands, num_classes = output_classes).to(device) # Use ResUNet model
 elif model_name == 'resunetpp':
-    model = ResUnetPlusPlus(num_bands=6, num_classes=3).to(device) # Use ResUNet++ model
+    model = ResUnetPlusPlus(num_bands = input_bands, num_classes = output_classes).to(device) # Use ResUNet++ model
+elif model_name == 'cnn':
+    if pooling_Flag:
+        model = cnn(num_bands = input_bands, num_classes = output_classes, dropout_prob=dropout_prob, pooling_Flag=True).to(device)
+    else:
+        model = cnn(num_bands =input_bands, num_classes = output_classes, dropout_prob=dropout_prob).to(device)
 else:
     print("Model not found.")
 
